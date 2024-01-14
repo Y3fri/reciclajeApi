@@ -13,5 +13,7 @@ class Sso_cliente(Base):
     cli_apellidos = Column(String(50))
     cli_nickname = Column(String(50))
     cli_clave = Column(String(255))
-    cli_telefono = Column(String(50))    
-    estado = relationship("Estado", back_populates="sso_clientes")
+    cli_telefono = Column(String(50))  
+
+    estado = relationship("Estado", back_populates="sso_cliente")
+    sso_recogida = relationship("Sso_recogida", back_populates="sso_cliente")

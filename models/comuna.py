@@ -7,4 +7,4 @@ class Comuna(Base):
 
     com_id = Column(Integer, primary_key = True)
     com_nombre=Column(String(50))
-    recogidas = relationship("Recogida", back_populates="comuna")
+    recogida = relationship("Recogida", back_populates="comuna")

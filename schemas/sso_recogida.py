@@ -5,7 +5,7 @@ from schemas.sso_cliente import Sso_cliente
 from schemas.recogida import Recogida
 from schemas.sso_usuario import Sso_usuario
 
-class SsoRecogida(BaseModel):
+class Sso_Recogida(BaseModel):
     sreg_idcliente: int
     sreg_idestado: int
     sreg_idrecogida: int
@@ -16,7 +16,8 @@ class SsoRecogida(BaseModel):
     sreg_hora1: str
     sreg_hora2: str
     sreg_asignacion: bool
-    cliente:Sso_cliente
-    estado:Estado
+    sso_cliente:Sso_cliente
+    estado:Estado    
+    sso_usuario: Sso_usuario
     recogida:Recogida
-    trabajador: Sso_usuario
+    
