@@ -1,11 +1,15 @@
 from models.sso_usuario import Sso_usuario  as Sso_usuarioModule
 from schemas.sso_usuario import Sso_usuario
+from sqlalchemy.orm import Session
+from utils.hash import hash_sha256_then_md5_then_sha1_and_sha512
+
+
 
 class Sso_usuarioService():
 
-    def __init__(self,db) -> None:
+    def __init__(self, db: Session) -> None:
         self.db = db
-
+        
     def get_sso_usuario(self):      
         result = self.db.query(Sso_usuarioModule).all()
         sso_usuario_list = [
@@ -27,3 +31,11 @@ class Sso_usuarioService():
             for sso_usuario in result
         ]
         return sso_usuario_list
+    
+
+    def authenticate_user(self, nickname: str, clave: str):   
+        password = hash_sha256_then_md5_then_sha1_and_sha512(clave)
+        user = self.db.query(Sso_usuarioModule).filter(Sso_usuarioModule.usu_nickname == nickname, Sso_usuarioModule.usu_clave == password).first()   
+        print(f"holasa{user}")              
+        return user
+        

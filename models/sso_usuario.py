@@ -12,7 +12,7 @@ class Sso_usuario(Base):
     usu_documento = Column(String(20))
     usu_nombres = Column(String(50))
     usu_apellidos = Column(String(50))
-    usu_nickname = Column(String(50))
+    usu_nickname = Column(String(50),unique=True, index=True)
     usu_clave = Column(String(255))    
     usu_latitud = Column(DECIMAL(10, 6))
     usu_longitud = Column(DECIMAL(10, 6))
