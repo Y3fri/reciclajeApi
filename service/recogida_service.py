@@ -28,15 +28,15 @@ class RecogidaService():
 
     def create_recogida(self, recogida: Recogida):
         new_recogida = RecogidaModel(
-            reg_idcomuna=recogida.reg_idcomuna,
-            reg_plastico=recogida.reg_plastico,
-            reg_papel=recogida.reg_papel,
-            reg_carton=recogida.reg_carton,
-            reg_metal=recogida.reg_metal,
-            reg_vidrio=recogida.reg_vidrio,
-            reg_ubicacion_lag=recogida.reg_ubicacion_lag,
-            reg_ubicacion_log=recogida.reg_ubicacion_log,
-            reg_numero=recogida.reg_numero
+            reg_idcomuna = recogida.reg_idcomuna,
+            reg_plastico = recogida.reg_plastico,
+            reg_papel = recogida.reg_papel,
+            reg_carton = recogida.reg_carton,
+            reg_metal = recogida.reg_metal,
+            reg_vidrio = recogida.reg_vidrio,
+            reg_ubicacion_lag = recogida.reg_ubicacion_lag,
+            reg_ubicacion_log = recogida.reg_ubicacion_log,
+            reg_numero = recogida.reg_numero
         )
         self.db.add(new_recogida)
         self.db.commit()
@@ -50,9 +50,9 @@ class RecogidaService():
         result.reg_carton = recogida.reg_carton
         result.reg_metal = recogida.reg_metal
         result.reg_vidrio = recogida.reg_vidrio
-        result.reg_ubicacion_lag=recogida.reg_ubicacion_lag
-        result.reg_ubicacion_log=recogida.reg_ubicacion_log
-        result.reg_numero=recogida.reg_numero
+        result.reg_ubicacion_lag = recogida.reg_ubicacion_lag
+        result.reg_ubicacion_log = recogida.reg_ubicacion_log
+        result.reg_numero = recogida.reg_numero
         self.db.commit()
         return
     
