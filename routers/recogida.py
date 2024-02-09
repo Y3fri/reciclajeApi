@@ -1,11 +1,13 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from typing import List
 from config.database import Session
 from models.recogida import Recogida
 from fastapi.encoders import jsonable_encoder
+from schemas.sso_recogida import Sso_Recogida
 from service.recogida_service import RecogidaService
 from schemas.recogida import Recogida
+from middlewares.jwt_bearer_cliente import JWTBearerCli
 
 
 recogida_router = APIRouter()
@@ -22,11 +24,12 @@ def get_recogida() -> List[Recogida]:
         finally:
                 db.close()
 
-@recogida_router.post('/recogida',tags=['Recogida'],response_model=dict)
-def create_recogida(recogida:Recogida)-> dict:
+
+@recogida_router.post('/recogida',tags=['Recogida'],response_model=dict, dependencies= [Depends(JWTBearerCli())])
+def create_recogida(recogida:Recogida, sso_recogida: Sso_Recogida)-> dict:
         db = Session()
         try:
-                RecogidaService(db).create_recogida(recogida)
+                RecogidaService(db).create_recogida(recogida,sso_recogida)               
                 return JSONResponse(content={"message":"Se han insertado los datos correctamente"}, status_code=200)
         except Exception as e:
                 return JSONResponse(content={"error": f"Error al insertar los datos: {str(e)}"}, status_code=500)

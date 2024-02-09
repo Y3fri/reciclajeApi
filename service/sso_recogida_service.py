@@ -1,4 +1,5 @@
 from models.sso_recogida import Sso_recogida as Sso_recogidaModule
+from schemas.sso_recogida import Sso_Recogida
 
 class Sso_recogidaService():
 
@@ -36,3 +37,18 @@ class Sso_recogidaService():
             for sso_recogida in result
         ]
         return sso_recogida_list
+    
+        
+    def update_sso_recogida(self, id: int, sso_recogida: Sso_Recogida):
+        result = self.db.query(Sso_recogidaModule).filter(Sso_recogidaModule.sreg_id == id).first()
+        result.reg_idcomuna = sso_recogida.reg_idcomuna
+        result.reg_plastico = sso_recogida.reg_plastico
+        result.reg_papel = sso_recogida.reg_papel
+        result.reg_carton = sso_recogida.reg_carton
+        result.reg_metal = sso_recogida.reg_metal
+        result.reg_vidrio = sso_recogida.reg_vidrio
+        result.reg_ubicacion_lag = sso_recogida.reg_ubicacion_lag
+        result.reg_ubicacion_log = sso_recogida.reg_ubicacion_log
+        result.reg_numero = sso_recogida.reg_numero
+        self.db.commit()
+        return

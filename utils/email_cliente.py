@@ -44,7 +44,7 @@ def send_registration_email(email,nickname):
             message["From"] = sender_email
             message["To"] = receiver_email
             message["Subject"] = subject
-            message.attach(MIMEText(body, "plain"))
+            message.attach(MIMEText(body, "html"))
             
             with smtplib.SMTP(smtp_server, smtp_port) as server:
                 server.starttls()

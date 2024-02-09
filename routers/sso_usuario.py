@@ -17,8 +17,8 @@ sso_usuario_router = APIRouter()
 def get_sso_usuario()-> List [Sso_usuario]:
         db = Session()
         try:
-            result = Sso_usuarioService(db).get_sso_usuario()
-            return JSONResponse(content= jsonable_encoder(result))
+                result = Sso_usuarioService(db).get_sso_usuario()
+                return JSONResponse(content= jsonable_encoder(result))
         except Exception as e:        
                 return JSONResponse(content={"error": f"Error al obtener los usuarios: {str(e)}"}, status_code=500)
         finally:
@@ -49,18 +49,18 @@ def update_sso_usuario(id: int, sso_usuario: Sso_usuario) -> dict:
 
 @sso_usuario_router.post('/login', tags=['Auth'])
 def login(user: User_usu):    
-    db = Session()
-    try:
-        result =Sso_usuarioService(db).authenticate_user(user.usu_nickname, user.usu_clave)
-        if result:              
-            token = create_token(user.dict())                  
-            return {"token": token, "usu_estado": result.usu_estado, "usu_rol": result.usu_rol}
-        else:
-            raise HTTPException(status_code=401, detail="Credenciales inválidas")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        db.close()
+        db = Session()
+        try:
+                result =Sso_usuarioService(db).authenticate_user(user.usu_nickname, user.usu_clave)
+                if result:              
+                        token = create_token(user.dict())                  
+                        return {"token": token, "usu_estado": result.   usu_estado, "usu_rol": result.usu_rol}
+                else:
+                        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+        finally:
+                db.close()
 
 
 

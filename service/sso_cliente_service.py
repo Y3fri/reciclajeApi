@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 from utils.hash import hash_sha256_then_md5_then_sha1_and_sha512
 from schemas.sso_cliente import Sso_cliente
 from utils.email_cliente import send_registration_email
+from models.sso_recogida import Sso_recogida as Sso_recogidaModule
+from schemas.sso_recogida import Sso_Recogida
+
 
 
 class Sso_clienteService():
@@ -22,6 +25,7 @@ class Sso_clienteService():
                 "cli_nickname": sso_cliente.cli_nickname ,
                 "cli_clave": sso_cliente.cli_clave ,
                 "cli_telefono": sso_cliente.cli_telefono ,
+                "cli_totalpuntos": sso_cliente.cli_totalpuntos,
                 "cli_id": sso_cliente.cli_id,
                 "nombre_estado": sso_cliente.estado.est_nombre,                
             }
@@ -31,20 +35,25 @@ class Sso_clienteService():
     
     
     def create_sso_cliente(self, sso_cliente: Sso_cliente):
-        new_sso_cliente = Sso_clienteModule(
-            cli_estado = sso_cliente.cli_estado,
-            cli_correo = sso_cliente.cli_correo,
-            cli_documento = sso_cliente.cli_documento,
-            cli_nombres = sso_cliente.cli_nombres,
-            cli_apellidos = sso_cliente.cli_apellidos,
-            cli_nickname = sso_cliente.cli_nickname,
-            cli_clave = hash_sha256_then_md5_then_sha1_and_sha512(sso_cliente.cli_clave),
-            cli_telefono = sso_cliente.cli_telefono,            
-        )
-        self.db.add(new_sso_cliente)
-        self.db.commit()
-        send_registration_email(email = sso_cliente.usu_correo,nickname = sso_cliente.usu_nickname)
-        return
+        existing_user = self.db.query(Sso_clienteModule).filter_by(cli_nickname=sso_cliente.cli_nickname).first()
+        if existing_user:
+            raise ValueError("El nickname ya está en uso. Por favor, elige otro.")
+        else:
+            new_sso_cliente = Sso_clienteModule(
+                cli_estado = sso_cliente.cli_estado,
+                cli_correo = sso_cliente.cli_correo,
+                cli_documento = sso_cliente.cli_documento,
+                cli_nombres = sso_cliente.cli_nombres,
+                cli_apellidos = sso_cliente.cli_apellidos,
+                cli_nickname = sso_cliente.cli_nickname,
+                cli_clave = hash_sha256_then_md5_then_sha1_and_sha512(sso_cliente.cli_clave),
+                cli_telefono = sso_cliente.cli_telefono,
+                cli_totalpuntos = 0            
+            )
+            self.db.add(new_sso_cliente)
+            self.db.commit()
+            send_registration_email(email = sso_cliente.cli_correo,nickname = sso_cliente.cli_nickname)
+            return
     
     def update_sso_cliente(self, id: int, sso_cliente: Sso_cliente):
         result = self.db.query(Sso_clienteModule).filter(Sso_clienteModule.cli_id == id).first()
@@ -55,13 +64,35 @@ class Sso_clienteService():
         result.cli_apellidos = sso_cliente.cli_apellidos
         result.cli_nickname = sso_cliente.cli_nickname
         result.cli_clave = sso_cliente.cli_clave
-        result.cli_telefono = sso_cliente.cli_telefono        
+        result.cli_telefono = sso_cliente.cli_telefono  
+        result.cli_totalpuntos = sso_cliente.cli_totalpuntos      
+        self.db.commit()
+        return
+    
+    def calcular_total_puntos(self, id):        
+        result = self.db.query(Sso_recogidaModule).filter(Sso_recogidaModule.sreg_idcliente == id).all()
+        total_puntos = sum(punto.sreg_puntos for punto in result)
+        print(f"Total de puntos: {total_puntos}")
+        return total_puntos
+
+    def update_sso_cliente_puntos(self, id: int, sso_cliente: Sso_cliente):
+        result = self.db.query(Sso_clienteModule).filter(Sso_clienteModule.cli_id == id).first()
+        result.cli_estado = sso_cliente.cli_estado
+        result.cli_correo = sso_cliente.cli_correo
+        result.cli_documento = sso_cliente.cli_documento
+        result.cli_nombres = sso_cliente.cli_nombres
+        result.cli_apellidos = sso_cliente.cli_apellidos
+        result.cli_nickname = sso_cliente.cli_nickname
+        result.cli_clave = sso_cliente.cli_clave
+        result.cli_telefono = sso_cliente.cli_telefono  
+        result.cli_totalpuntos = self.calcular_total_puntos(id)
         self.db.commit()
         return
 
 
     def authenticate_user(self, nickname: str, clave: str):   
         password = hash_sha256_then_md5_then_sha1_and_sha512(clave)
-        user = self.db.query(Sso_clienteModule).filter(Sso_clienteModule.cli_nickname == nickname, Sso_clienteModule.cli_clave == password).first()                      
+        user = self.db.query(Sso_clienteModule).filter(Sso_clienteModule.cli_nickname == nickname, Sso_clienteModule.cli_clave == password, Sso_clienteModule.cli_estado == 1).first()                      
         return user
-        
+    
+    

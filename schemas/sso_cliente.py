@@ -13,4 +13,5 @@ class Sso_cliente(BaseModel):
         cli_nickname:str
         cli_clave:str
         cli_telefono:str
+        cli_totalpuntos:int
         estado:Estado

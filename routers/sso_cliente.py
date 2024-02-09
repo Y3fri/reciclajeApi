@@ -45,6 +45,17 @@ def update_sso_cliente(id: int, sso_cliente: Sso_cliente) -> dict:
                 db.close()
 
 
+@sso_cliente_router.put('/sso_cliente/puntos/{id}', tags=['Cliente'], response_model=dict)
+def update_sso_cliente(id: int, sso_cliente: Sso_cliente) -> dict:
+        db = Session()
+        try:               
+                Sso_clienteService(db).update_sso_cliente_puntos(id, sso_cliente)
+                return JSONResponse(content={"message": "Puntos actualizados"})
+        except Exception as e:                
+                return JSONResponse(content={"error": f"Error al actualizar los puntos: {str(e)}"}, status_code=500)
+        finally:
+                db.close()
+
 @sso_cliente_router.post('/loginCli', tags=['Auth'])
 def login(user: User_cli):    
         db = Session()
