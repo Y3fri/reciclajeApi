@@ -26,6 +26,25 @@ class ProductoService():
             for producto in result
         ]
         return producto_list
+    
+    def get_productoTodo(self):      
+        result = self.db.query(ProductoModel).all()
+        producto_list = [
+            {
+                "pro_empresa": producto.pro_empresa,
+                "pro_estado": producto.pro_estado,
+                "pro_foto": producto.pro_foto,
+                "pro_nombre": producto.pro_nombre,
+                "pro_puntos": producto.pro_puntos,
+                "pro_cantidad": producto.pro_cantidad,
+                "pro_id": producto.pro_id,                
+                "nombre_empresa": producto.empresa.inf_razon_social,
+                "nombre_estado": producto.estado.est_nombre,                
+            }
+            for producto in result
+        ]
+        return producto_list
+
 
 
     def create_producto(self, producto: Producto):          

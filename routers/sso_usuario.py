@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from typing import List
 from config.database import Session
+from middlewares.jwt_bearer import JWTBearer
 from models.sso_usuario import Sso_usuario
 from fastapi.encoders import jsonable_encoder
 from service.sso_usuaio_service import Sso_usuarioService
@@ -13,7 +14,7 @@ from schemas.user_usu import User_usu
 sso_usuario_router = APIRouter()
 
 
-@sso_usuario_router.get('/sso_usuario',tags=['Usuario'], response_model=list[Sso_usuario])
+@sso_usuario_router.get('/sso_usuario',tags=['Usuario'], response_model=list[Sso_usuario],dependencies= [Depends(JWTBearer())])
 def get_sso_usuario()-> List [Sso_usuario]:
         db = Session()
         try:
@@ -24,7 +25,7 @@ def get_sso_usuario()-> List [Sso_usuario]:
         finally:
                 db.close()
 
-@sso_usuario_router.post('/sso_usuario',tags=['Usuario'],response_model=dict)
+@sso_usuario_router.post('/sso_usuario',tags=['Usuario'],response_model=dict,dependencies= [Depends(JWTBearer())])
 def create_usuario(usuario:Sso_usuario)-> dict:
         db = Session()
         try:
@@ -34,7 +35,7 @@ def create_usuario(usuario:Sso_usuario)-> dict:
                 return JSONResponse(content={"error": f"Error al insertar los datos: {str(e)}"}, status_code=500)
 
 
-@sso_usuario_router.put('/sso_usuario/{id}', tags=['Usuario'], response_model=dict)
+@sso_usuario_router.put('/sso_usuario/{id}', tags=['Usuario'], response_model=dict,dependencies= [Depends(JWTBearer())])
 def update_sso_usuario(id: int, sso_usuario: Sso_usuario) -> dict:
         db = Session()
         try:               

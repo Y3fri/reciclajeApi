@@ -15,6 +15,7 @@ class Sso_usuarioService():
         result = self.db.query(Sso_usuarioModule).all()
         sso_usuario_list = [
             {
+                "usu_id": sso_usuario.usu_id,
                 "usu_estado": sso_usuario.usu_estado,
                 "usu_rol": sso_usuario.usu_rol,                
                 "usu_correo": sso_usuario.usu_correo ,

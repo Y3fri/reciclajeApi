@@ -12,8 +12,7 @@ class Sso_usuario(BaseModel):
         usu_nombres:str   
         usu_apellidos:str
         usu_nickname:str
-        usu_clave:str
-        usu_telefono:str
+        usu_clave:str        
         usu_latitud:float
         usu_longitud:float
         usu_fechahora:str
