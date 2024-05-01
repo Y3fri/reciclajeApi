@@ -1,12 +1,10 @@
-from fastapi import APIRouter, HTTPException
-from fastapi import Path, Query, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel,Field
-from typing import Optional, List
+from typing import List
 from config.database import Session
+from middlewares.jwt_bearer import JWTBearer
 from models.sso_usuario import Sso_usuario
 from fastapi.encoders import jsonable_encoder
-from middlewares.jwt_bearer import JWTBearer
 from service.sso_usuaio_service import Sso_usuarioService
 from schemas.sso_usuario import Sso_usuario
 from utils.jwt_manager import create_token
@@ -16,28 +14,54 @@ from schemas.user_usu import User_usu
 sso_usuario_router = APIRouter()
 
 
-@sso_usuario_router.get('/sso_usuario',tags=['Usuario'], response_model=list[Sso_usuario])
+@sso_usuario_router.get('/sso_usuario',tags=['Usuario'], response_model=list[Sso_usuario],dependencies= [Depends(JWTBearer())])
 def get_sso_usuario()-> List [Sso_usuario]:
         db = Session()
-        result = Sso_usuarioService(db).get_sso_usuario()
-        return JSONResponse(content= jsonable_encoder(result))
+        try:
+                result = Sso_usuarioService(db).get_sso_usuario()
+                return JSONResponse(content= jsonable_encoder(result))
+        except Exception as e:        
+                return JSONResponse(content={"error": f"Error al obtener los usuarios: {str(e)}"}, status_code=500)
+        finally:
+                db.close()
+
+@sso_usuario_router.post('/sso_usuario',tags=['Usuario'],response_model=dict,dependencies= [Depends(JWTBearer())])
+def create_usuario(usuario:Sso_usuario)-> dict:
+        db = Session()
+        try:
+                Sso_usuarioService(db).create_sso_usuario(usuario)
+                return JSONResponse(content={"message":"Se han insertado los datos correctamente"}, status_code=200)
+        except Exception as e:
+                return JSONResponse(content={"error": f"Error al insertar los datos: {str(e)}"}, status_code=500)
+
+
+@sso_usuario_router.put('/sso_usuario/{id}', tags=['Usuario'], response_model=dict,dependencies= [Depends(JWTBearer())])
+def update_sso_usuario(id: int, sso_usuario: Sso_usuario) -> dict:
+        db = Session()
+        try:               
+                Sso_usuarioService(db).update_sso_usuario(id, sso_usuario)
+                return JSONResponse(content={"message": "usuario actualizado"})
+        except Exception as e:                
+                return JSONResponse(content={"error": f"Error al actualizar el usuario: {str(e)}"}, status_code=500)
+        finally:
+                db.close()
+
+
 
 @sso_usuario_router.post('/login', tags=['Auth'])
 def login(user: User_usu):    
-    db = Session()
-    try:
-        result =Sso_usuarioService(db).authenticate_user(user.usu_nickname, user.usu_clave)
-        if result:   
-            print(result.usu_nickname)
-            print(result.usu_estado)
-            token = create_token(user.dict())                  
-            return {"token": token, "usu_estado": result.usu_estado, "usu_rol": result.usu_rol}
-        else:
-            raise HTTPException(status_code=401, detail="Credenciales inválidas")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        db.close()
+        db = Session()
+        try:
+                result =Sso_usuarioService(db).authenticate_user(user.usu_nickname, user.usu_clave)
+                if result:              
+                        token = create_token(user.dict())                  
+                        return {"token": token, "usu_estado": result.   usu_estado, "usu_rol": result.usu_rol}
+                else:
+                        raise HTTPException(status_code=401, detail="Credenciales inválidas")
+        except Exception as e:
+                raise HTTPException(status_code=500, detail=str(e))
+        finally:
+                db.close()
 
 
 

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from config.database import engine,Base
 from middlewares.error_handler import ErrorHandler
 from routers.empresa import empresa_router
@@ -9,11 +10,26 @@ from routers.recogida import recogida_router
 from routers.sso_cliente import sso_cliente_router
 from routers.sso_usuario import sso_usuario_router
 from routers.sso_recogida import sso_recogida_router
+from routers.producto import producto_router
 
 app = FastAPI(
     title= 'prendiendo FastApi',
     description= 'Una API ',
     version= '0.0.2',
+)
+
+
+origins = [
+    "http://localhost",
+    "http://localhost:3000", 
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.add_middleware(ErrorHandler)
@@ -25,6 +41,7 @@ app.include_router(recogida_router)
 app.include_router(sso_cliente_router)
 app.include_router(sso_usuario_router)
 app.include_router(sso_recogida_router)
+app.include_router(producto_router)
 
 Base.metadata.create_all(bind=engine)
 

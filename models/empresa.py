@@ -1,5 +1,6 @@
 from config.database import Base
 from sqlalchemy import Column,Integer,String,Float
+from sqlalchemy.orm import relationship
 
 class Empresa(Base):
     __tablename__="empresa"
@@ -15,3 +16,5 @@ class Empresa(Base):
     inf_facebook=Column(String(500))
     inf_instagram=Column(String(500))
     inf_tiktok=Column(String(500))
+
+    productos = relationship("Producto", back_populates="empresa")

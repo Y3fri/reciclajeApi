@@ -1,5 +1,4 @@
-from pydantic import BaseModel,Field
-from typing import Optional
+from pydantic import BaseModel
 from schemas.estado import Estado
 from schemas.sso_cliente import Sso_cliente
 from schemas.recogida import Recogida
