@@ -22,6 +22,7 @@ app = FastAPI(
 origins = [
     "http://localhost",
     "http://localhost:3000", 
+    "https://master--rec1claje.netlify.app", 
 ]
 
 app.add_middleware(
