@@ -63,7 +63,7 @@ def login(user: User_cli):
                 result =Sso_clienteService(db).authenticate_user(user.cli_nickname, user.cli_clave)
                 if result:               
                         token = create_token_cli(user.dict())                  
-                        return {"token": token, "cli_estado": result.cli_estado, "cli_id": result.cli_id}
+                        return {"token": token, "cli_estado": result.cli_estado, "cli_id": result.cli_id, "cli_totalpuntos": result.cli_totalpuntos}
                 else:
                         raise HTTPException(status_code=401, detail="Credenciales inválidas")
         except Exception as e:
