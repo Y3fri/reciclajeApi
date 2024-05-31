@@ -24,6 +24,7 @@ class RecogidaService():
                 "reg_metal": recogida.reg_metal,
                 "reg_ubicacion_lag": recogida.reg_ubicacion_lag,
                 "reg_numero": recogida.reg_numero,
+                "reg_direccion": recogida.reg_direccion,
                 "nombre_comuna": recogida.comuna.com_nombre,                
             }
             for recogida in result
@@ -47,7 +48,8 @@ class RecogidaService():
                 reg_vidrio=recogida.reg_vidrio,
                 reg_ubicacion_lag=recogida.reg_ubicacion_lag,
                 reg_ubicacion_log=recogida.reg_ubicacion_log,
-                reg_numero=recogida.reg_numero
+                reg_numero=recogida.reg_numero,
+                reg_direccion = recogida.reg_direccion
             )
             self.db.add(new_recogida)
             self.db.commit()
@@ -82,6 +84,7 @@ class RecogidaService():
         result.reg_ubicacion_lag = recogida.reg_ubicacion_lag
         result.reg_ubicacion_log = recogida.reg_ubicacion_log
         result.reg_numero = recogida.reg_numero
+        result.reg_direccion = recogida.reg_direccion
         self.db.commit()
         return
     

@@ -12,6 +12,7 @@ class Recogida(BaseModel):
     reg_ubicacion_lag: float
     reg_ubicacion_log: float
     reg_numero: str
+    reg_direccion:str
     comuna: Comuna
 
     class Config:
