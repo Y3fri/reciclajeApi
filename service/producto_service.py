@@ -1,3 +1,5 @@
+import base64
+from pathlib import Path
 from sqlalchemy import func
 from models.producto import Producto  as ProductoModel
 from schemas.producto import Producto
@@ -8,6 +10,25 @@ class ProductoService():
 
     def __init__(self,db) -> None:
         self.db = db
+
+    def save_image(self, base64_image: str, product_name: str) -> str:
+        try:
+            # Decode the base64 string
+            base64_image = base64_image.split(",")[1]  # To handle data URLs
+            image_data = base64.b64decode(base64_image)
+            # Define paths
+            product_folder_path = Path(f"images/{product_name}")
+            product_folder_path.mkdir(parents=True, exist_ok=True)
+            file_name = f"{product_name}.jpeg"
+            file_path = product_folder_path / file_name
+            # Save the image to the filesystem
+            with open(file_path, "wb") as file:
+                file.write(image_data)
+            # Return the relative path to be stored in the database
+            return str(file_path)
+        except Exception as e:
+            print(f"Error saving image: {str(e)}")
+            raise
 
     def get_producto(self):      
         result = self.db.query(ProductoModel).filter(ProductoModel.pro_estado== 1).all()
@@ -49,10 +70,11 @@ class ProductoService():
 
     def create_producto(self, producto: Producto):          
         try:            
+            file_path = self.save_image(producto.pro_foto, producto.pro_nombre)
             new_producto = ProductoModel(
                 pro_empresa=producto.pro_empresa,
                 pro_estado=producto.pro_estado,
-                pro_foto=producto.pro_foto,
+                pro_foto=file_path,
                 pro_nombre=producto.pro_nombre,
                 pro_puntos=producto.pro_puntos,
                 pro_cantidad=producto.pro_cantidad,                
@@ -69,7 +91,9 @@ class ProductoService():
         result = self.db.query(ProductoModel).filter(ProductoModel.pro_id == id).first()
         result.pro_empresa = producto.pro_empresa
         result.pro_estado = producto.pro_estado        
-        result.pro_foto = producto.pro_foto
+        if producto.pro_foto != result.pro_foto:            
+            file_path = self.save_image(producto.pro_foto, producto.pro_nombre)
+            result.pro_foto = file_path
         result.pro_nombre = producto.pro_nombre
         result.pro_puntos = producto.pro_puntos
         result.pro_cantidad = producto.pro_cantidad                

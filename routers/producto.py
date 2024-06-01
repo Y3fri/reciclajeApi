@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse, JSONResponse
 from typing import List
 from config.database import Session
 from middlewares.jwt_bearer import JWTBearer
@@ -35,6 +36,20 @@ def get_productoTodo() -> List[Producto]:
                 return JSONResponse(content={"error": f"Error al obtener las productos: {str(e)}"}, status_code=500)
         finally:
                 db.close()
+
+
+@producto_router.get("/images/{product_name}/file",tags=['Imagen'])
+async def get_image(product_name: str):
+    try:        
+        product_folder_path = Path(f"images/{product_name}")
+        file_name = f"{product_name}.jpeg"
+        file_path = product_folder_path / file_name                
+        if file_path.exists():
+            return FileResponse(file_path, media_type="image/jpeg")
+        else:
+            raise HTTPException(status_code=404, detail="Image not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @producto_router.post('/producto', tags=['Producto'], response_model=dict,dependencies= [Depends(JWTBearer())])
