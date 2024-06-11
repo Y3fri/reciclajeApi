@@ -129,7 +129,7 @@ class Sso_clienteService():
             current_time = datetime.now(local_timezone)
             if existing_session:                
                 existing_session.ses_token = token
-                existing_session.ses_expiration_timestamp = current_time + timedelta(minutes=2)
+                existing_session.ses_expiration_timestamp = current_time + timedelta(minutes=480)
                 existing_session.ses_created_at = current_time
                 self.db.commit()
                 self.db.refresh(existing_session)
@@ -138,7 +138,7 @@ class Sso_clienteService():
                 new_session = UserCliSessionModule(
                     ses_idcliente=user_id,
                     ses_token=token,
-                    ses_expiration_timestamp=current_time + timedelta(minutes=2),
+                    ses_expiration_timestamp=current_time + timedelta(minutes=480),
                     ses_created_at=current_time
                 )
                 self.db.add(new_session)

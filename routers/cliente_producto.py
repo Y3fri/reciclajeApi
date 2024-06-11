@@ -26,15 +26,19 @@ def get_cliente_producto() -> List[Cliente_producto]:
                 
 
 
-@cliente_producto_router.post('/cliente_producto',tags=['Cliente_producto'],response_model=dict, dependencies= [Depends(JWTBearerCli())])
-def create_cliente_producto(cliente_producto:Cliente_producto)-> dict:
-        db = Session()
-        try:
-                Cliente_productoService(db).create_cliente_producto(cliente_producto)               
-                return JSONResponse(content={"message":"Se han insertado los datos correctamente"}, status_code=200)
-        except Exception as e:
-                return JSONResponse(content={"error": f"Error al insertar los datos: {str(e)}"}, status_code=500)
-
+@cliente_producto_router.post('/cliente_producto', tags=['Cliente_producto'], response_model=dict, dependencies=[Depends(JWTBearerCli())])
+def create_cliente_producto(cliente_producto: Cliente_producto) -> dict:
+    db = Session()
+    try:
+        Cliente_productoService(db).create_cliente_producto(cliente_producto)
+        return JSONResponse(content={"message": "Se han insertado los datos correctamente"}, status_code=200)
+    except ValueError as e:        
+        return JSONResponse(content={"error": f"Error al insertar los datos: {str(e)}"}, status_code=400)
+    except Exception as e:        
+        print(f"Error interno del servidor: {str(e)}")
+        return JSONResponse(content={"error": "Error interno del servidor"}, status_code=500)
+    finally:
+        db.close()
 
 @cliente_producto_router.put('/cliente_producto/{id}', tags=['Cliente_producto'], response_model=dict)
 def update_cliente_producto(id: int, cliente_producto: Cliente_producto) -> dict:

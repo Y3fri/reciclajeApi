@@ -20,8 +20,7 @@ app = FastAPI(
 )
 
 
-origins = [
-    "http://localhost",
+origins = [    
     "http://localhost:3000", 
     "https://master--rec1claje.netlify.app", 
 ]
