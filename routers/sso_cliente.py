@@ -23,6 +23,17 @@ def get_sso_cliente()-> List [Sso_cliente]:
         finally:
                 db.close()
 
+@sso_cliente_router.get('/sso_cliente/{id}',tags=['Cliente'], response_model=list[Sso_cliente])
+def get_sso_clientId(id:int)-> List [Sso_cliente]:
+        db = Session()
+        try:
+                result = Sso_clienteService(db).get_sso_clienteId(id)
+                return JSONResponse(content= jsonable_encoder(result))
+        except Exception as e:        
+                return JSONResponse(content={"error": f"Error al obtener los clientes: {str(e)}"}, status_code=500)
+        finally:
+                db.close()
+
 @sso_cliente_router.post('/sso_cliente',tags=['Cliente'],response_model=dict)
 def create_cliente(cliente:Sso_cliente)-> dict:
         db = Session()
@@ -56,20 +67,26 @@ def update_sso_cliente(id: int, sso_cliente: Sso_cliente) -> dict:
         finally:
                 db.close()
 
+
+
 @sso_cliente_router.post('/loginCli', tags=['Auth'])
 def login(user: User_cli):    
         db = Session()
         try:
                 result =Sso_clienteService(db).authenticate_user(user.cli_nickname, user.cli_clave)
-                if result:               
-                        token = create_token_cli(user.dict())                  
-                        return {"token": token, "cli_estado": result.cli_estado, "cli_id": result.cli_id, "cli_totalpuntos": result.cli_totalpuntos}
+                if result:  
+                        token = create_token_cli(user.dict())           
+                        session = Sso_clienteService(db).create_user_session(result.cli_id, token)                            
+                                       
+                        return {"token": token, "cli_estado": result.cli_estado, "cli_id": result.cli_id, "session": session}
                 else:
                         raise HTTPException(status_code=401, detail="Credenciales inválidas")
         except Exception as e:
                 raise HTTPException(status_code=500, detail=str(e))
         finally:
                 db.close()
+
+
 
 
 

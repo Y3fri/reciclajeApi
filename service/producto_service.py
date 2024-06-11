@@ -31,7 +31,7 @@ class ProductoService():
             raise
 
     def get_producto(self):      
-        result = self.db.query(ProductoModel).filter(ProductoModel.pro_estado== 1).all()
+        result = self.db.query(ProductoModel).filter(ProductoModel.pro_estado== 1,ProductoModel.pro_cantidad >= 1).all()
         producto_list = [
             {
                 "pro_empresa": producto.pro_empresa,
