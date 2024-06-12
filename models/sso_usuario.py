@@ -21,3 +21,5 @@ class Sso_usuario(Base):
     estado = relationship("Estado", back_populates="sso_usuario")
     sso_rol = relationship("Sso_rol", back_populates="sso_usuario")
     sso_recogida = relationship("Sso_recogida", back_populates="sso_usuario")
+    usersession = relationship("UserSession", back_populates="sso_usuario")
+    

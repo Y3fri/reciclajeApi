@@ -10,6 +10,7 @@ class UserCliSession(BaseModel):
     ses_token: str
     ses_expiration_timestamp: datetime
     ses_created_at: datetime
+    ses_active:bool
     cliente: Sso_cliente
 
     class Config:

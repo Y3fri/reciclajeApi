@@ -89,6 +89,18 @@ def login(user: User_cli):
 
 
 
+@sso_cliente_router.put('/deactivate-sessionCli/{user_id}', tags=['Auth'])
+def deactivate_session(user_id: int):  
+    db = Session()  
+    try:
+        service = Sso_clienteService(db)
+        updated_session = service.deactivate_user_session(user_id)
+        return {"message": "Sesión desactivada con éxito", "session": updated_session}
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    finally:
+        db.close()
+
 
 
 

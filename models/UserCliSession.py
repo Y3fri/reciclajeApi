@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer,Boolean, String, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from config.database import Base
 from datetime import datetime
@@ -11,5 +11,6 @@ class UserCliSession(Base):
     ses_token = Column(String(255))
     ses_expiration_timestamp = Column(DateTime)
     ses_created_at = Column(DateTime, default=datetime.utcnow)
+    ses_active = Column(Boolean)
 
     sso_cliente = relationship("Sso_cliente", back_populates="userclisession")
