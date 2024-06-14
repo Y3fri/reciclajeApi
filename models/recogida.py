@@ -16,6 +16,7 @@ class Recogida(Base):
     reg_ubicacion_log = Column(DECIMAL(10, 6))
     reg_numero = Column(String(30))
     reg_direccion = Column(String(30))
+    reg_barrio_conjunto = Column(String(30))
 
     comuna = relationship("Comuna", back_populates="recogida")
     sso_recogida = relationship("Sso_recogida", back_populates="recogida")

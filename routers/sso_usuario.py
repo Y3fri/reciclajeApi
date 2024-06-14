@@ -54,8 +54,9 @@ def login(user: User_usu):
         try:
                 result =Sso_usuarioService(db).authenticate_user(user.usu_nickname, user.usu_clave)
                 if result:              
-                        token = create_token(user.dict())                  
-                        return {"token": token, "usu_estado": result.   usu_estado, "usu_rol": result.usu_rol}
+                        token = create_token(user.dict())   
+                        session = Sso_usuarioService(db).create_user_session(result.usu_id, token)                  
+                        return {"token": token, "usu_estado": result.   usu_estado, "usu_rol": result.usu_rol, "session": session}
                 else:
                         raise HTTPException(status_code=401, detail="Credenciales inválidas")
         except Exception as e:
@@ -65,6 +66,17 @@ def login(user: User_usu):
 
 
 
+@sso_usuario_router.put('/deactivate-session/{user_id}', tags=['Auth'])
+def deactivate_session(user_id: int):  
+    db = Session()  
+    try:
+        service = Sso_usuarioService(db)
+        updated_session = service.deactivate_user_session(user_id)
+        return {"message": "Sesión desactivada con éxito", "session": updated_session}
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    finally:
+        db.close()
 
 
 

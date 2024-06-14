@@ -13,6 +13,7 @@ class Recogida(BaseModel):
     reg_ubicacion_log: float
     reg_numero: str
     reg_direccion:str
+    reg_barrio_conjunto:str
     comuna: Comuna
 
     class Config:

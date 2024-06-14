@@ -1,10 +1,15 @@
+from fastapi import HTTPException
 from sqlalchemy import func
 from models.sso_usuario import Sso_usuario  as Sso_usuarioModule
 from sqlalchemy.orm import Session
 from utils.hash import hash_sha256_then_md5_then_sha1_and_sha512
 from schemas.sso_usuario import Sso_usuario
 from utils.email_usuario import send_registration_email
+from models.user_session import UserSession as UserSessionModule
+from datetime import datetime, timedelta
+import pytz
 
+local_timezone = pytz.timezone('America/Bogota')
 
 class Sso_usuarioService():
 
@@ -77,3 +82,52 @@ class Sso_usuarioService():
         password = hash_sha256_then_md5_then_sha1_and_sha512(clave)
         user = self.db.query(Sso_usuarioModule).filter(Sso_usuarioModule.usu_nickname == nickname, Sso_usuarioModule.usu_clave == password, Sso_usuarioModule.usu_estado == 1).first()                   
         return user
+    
+    def create_user_session(self, user_id: int, token: str) -> UserSessionModule:                 
+        try:
+            existing_session = self.db.query(UserSessionModule).filter_by(uses_iduser=user_id).first()
+            current_time = datetime.now(local_timezone)
+
+            if existing_session and existing_session.uses_active:
+                raise HTTPException(status_code=400, detail="Ya hay una sesión activa para este usuario.")
+
+            if existing_session:                
+                existing_session.uses_token = token
+                existing_session.uses_expiration_timestamp = current_time + timedelta(minutes=480)
+                existing_session.uses_created_at = current_time
+                existing_session.uses_active = True
+                self.db.commit()
+                self.db.refresh(existing_session)
+                return existing_session
+            else:                
+                new_session = UserSessionModule(
+                    uses_iduser=user_id,
+                    uses_token=token,
+                    uses_expiration_timestamp=current_time + timedelta(minutes=480),
+                    uses_created_at=current_time,
+                    uses_active=True
+                )
+                self.db.add(new_session)
+                self.db.commit()
+                self.db.refresh(new_session)
+                return new_session
+        except HTTPException as http_error:
+            raise http_error
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail="Error al crear o actualizar la sesión de usuario")
+
+    def deactivate_user_session(self, user_id: int) -> UserSessionModule:
+        try:            
+            existing_session = self.db.query(UserSessionModule).filter_by(uses_iduser=user_id).first()            
+            if existing_session:   
+                existing_session.uses_token = "null_session"         
+                existing_session.uses_active = False
+                self.db.commit()
+                self.db.refresh(existing_session)
+                return existing_session
+            else:
+                raise HTTPException(status_code=404, detail="Sesión no encontrada")
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail="Error al actualizar la sesión del usuario")

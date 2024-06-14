@@ -12,3 +12,5 @@ class Estado(Base):
     sso_usuario = relationship("Sso_usuario", back_populates="estado")
     sso_recogida = relationship("Sso_recogida", back_populates="estado")
     productos = relationship("Producto", back_populates="estado")
+    cliente_producto = relationship("Cliente_producto", back_populates="estado")
+    

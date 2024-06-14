@@ -1,14 +1,19 @@
+from fastapi import HTTPException
 from models.sso_cliente import Sso_cliente  as Sso_clienteModule
-from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 from utils.hash import hash_sha256_then_md5_then_sha1_and_sha512
 from schemas.sso_cliente import Sso_cliente
 from utils.email_cliente import send_registration_email
 from models.sso_recogida import Sso_recogida as Sso_recogidaModule
-from schemas.sso_recogida import Sso_Recogida
+from models.UserCliSession import UserCliSession as UserCliSessionModule
 
+import pytz
 
+local_timezone = pytz.timezone('America/Bogota')
 
 class Sso_clienteService():
+
+    
 
     def __init__(self,db) -> None:
         self.db = db
@@ -32,6 +37,27 @@ class Sso_clienteService():
             for sso_cliente in result
         ]
         return sso_cliente_list
+    
+    def get_sso_clienteId(self, cli_id):      
+        result = self.db.query(Sso_clienteModule).filter(Sso_clienteModule.cli_id == cli_id).first()    
+        if result:
+            sso_cliente_data = {
+                "cli_estado": result.cli_estado,
+                "cli_correo": result.cli_correo,
+                "cli_documento": result.cli_documento,
+                "cli_nombres": result.cli_nombres,
+                "cli_apellidos": result.cli_apellidos,
+                "cli_nickname": result.cli_nickname,
+                "cli_clave": result.cli_clave,
+                "cli_telefono": result.cli_telefono,
+                "cli_totalpuntos": result.cli_totalpuntos,
+                "cli_id": result.cli_id,
+                "nombre_estado": result.estado.est_nombre,
+            }
+            return sso_cliente_data
+        
+        return None
+
     
     
     def create_sso_cliente(self, sso_cliente: Sso_cliente):
@@ -90,9 +116,59 @@ class Sso_clienteService():
         return
 
 
-    def authenticate_user(self, nickname: str, clave: str):   
+    def authenticate_user(self, nickname: str, clave: str):
         password = hash_sha256_then_md5_then_sha1_and_sha512(clave)
-        user = self.db.query(Sso_clienteModule).filter(Sso_clienteModule.cli_nickname == nickname, Sso_clienteModule.cli_clave == password, Sso_clienteModule.cli_estado == 1).first()                      
+        user = self.db.query(Sso_clienteModule).filter(Sso_clienteModule.cli_nickname == nickname, Sso_clienteModule.cli_clave == password, Sso_clienteModule.cli_estado == 1).first()
         return user
+
     
-    
+
+    def create_user_session(self, user_id: int, token: str) -> UserCliSessionModule:                 
+        try:
+            existing_session = self.db.query(UserCliSessionModule).filter_by(ses_idcliente=user_id).first()
+            current_time = datetime.now(local_timezone)
+
+            if existing_session and existing_session.ses_active:
+                raise HTTPException(status_code=400, detail="Ya hay una sesión activa para este usuario.")
+
+            if existing_session:                
+                existing_session.ses_token = token
+                existing_session.ses_expiration_timestamp = current_time + timedelta(minutes=480)
+                existing_session.ses_created_at = current_time
+                existing_session.ses_active = True
+                self.db.commit()
+                self.db.refresh(existing_session)
+                return existing_session
+            else:                
+                new_session = UserCliSessionModule(
+                    ses_idcliente=user_id,
+                    ses_token=token,
+                    ses_expiration_timestamp=current_time + timedelta(minutes=480),
+                    ses_created_at=current_time,
+                    ses_active=True
+                )
+                self.db.add(new_session)
+                self.db.commit()
+                self.db.refresh(new_session)
+                return new_session
+        except HTTPException as http_error:
+            raise http_error
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail="Error al crear o actualizar la sesión de usuario")
+
+        
+    def deactivate_user_session(self, user_id: int) -> UserCliSessionModule:
+        try:            
+            existing_session = self.db.query(UserCliSessionModule).filter_by(ses_idcliente=user_id).first()            
+            if existing_session:   
+                existing_session.ses_token = "null_session"         
+                existing_session.ses_active = False
+                self.db.commit()
+                self.db.refresh(existing_session)
+                return existing_session
+            else:
+                raise HTTPException(status_code=404, detail="Sesión no encontrada")
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail="Error al actualizar la sesión del usuario")
