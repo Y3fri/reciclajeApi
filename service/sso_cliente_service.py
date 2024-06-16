@@ -4,8 +4,12 @@ from datetime import datetime, timedelta
 from utils.hash import hash_sha256_then_md5_then_sha1_and_sha512
 from schemas.sso_cliente import Sso_cliente
 from utils.email_cliente import send_registration_email
+from utils.email_password_cli import send_reset_password_email
 from models.sso_recogida import Sso_recogida as Sso_recogidaModule
 from models.UserCliSession import UserCliSession as UserCliSessionModule
+from models.resetpasswordcli import Resetpasswordcli as ResetpasswordcliModule
+from utils.jwt_manager_cliente import create_token_cli,validate_token_cli
+import secrets
 
 import pytz
 
@@ -59,27 +63,36 @@ class Sso_clienteService():
         return None
 
     
-    
+        
     def create_sso_cliente(self, sso_cliente: Sso_cliente):
-        existing_user = self.db.query(Sso_clienteModule).filter_by(cli_nickname=sso_cliente.cli_nickname).first()
-        if existing_user:
+        existing_user_by_nickname = self.db.query(Sso_clienteModule).filter_by(cli_nickname=sso_cliente.cli_nickname).first()
+        existing_user_by_correo = self.db.query(Sso_clienteModule).filter_by(cli_correo=sso_cliente.cli_correo).first()
+        
+        if existing_user_by_nickname:
             raise ValueError("El nickname ya está en uso. Por favor, elige otro.")
-        else:
-            new_sso_cliente = Sso_clienteModule(
-                cli_estado = sso_cliente.cli_estado,
-                cli_correo = sso_cliente.cli_correo,
-                cli_documento = sso_cliente.cli_documento,
-                cli_nombres = sso_cliente.cli_nombres,
-                cli_apellidos = sso_cliente.cli_apellidos,
-                cli_nickname = sso_cliente.cli_nickname,
-                cli_clave = hash_sha256_then_md5_then_sha1_and_sha512(sso_cliente.cli_clave),
-                cli_telefono = sso_cliente.cli_telefono,
-                cli_totalpuntos = 0            
-            )
-            self.db.add(new_sso_cliente)
-            self.db.commit()
-            send_registration_email(email = sso_cliente.cli_correo,nickname = sso_cliente.cli_nickname)
-            return
+        
+        if existing_user_by_correo:
+            raise ValueError("El correo electrónico ya está registrado. Por favor, usa otro correo.")
+        
+        new_sso_cliente = Sso_clienteModule(
+            cli_estado=sso_cliente.cli_estado,
+            cli_correo=sso_cliente.cli_correo,
+            cli_documento=sso_cliente.cli_documento,
+            cli_nombres=sso_cliente.cli_nombres,
+            cli_apellidos=sso_cliente.cli_apellidos,
+            cli_nickname=sso_cliente.cli_nickname,
+            cli_clave=hash_sha256_then_md5_then_sha1_and_sha512(sso_cliente.cli_clave),
+            cli_telefono=sso_cliente.cli_telefono,
+            cli_totalpuntos=0
+        )
+        
+        self.db.add(new_sso_cliente)
+        self.db.commit()
+        
+        send_registration_email(email=sso_cliente.cli_correo, nickname=sso_cliente.cli_nickname)
+        
+        return "Usuario creado exitosamente"
+
     
     def update_sso_cliente(self, id: int, sso_cliente: Sso_cliente):
         result = self.db.query(Sso_clienteModule).filter(Sso_clienteModule.cli_id == id).first()
@@ -172,3 +185,96 @@ class Sso_clienteService():
         except Exception as e:
             self.db.rollback()
             raise HTTPException(status_code=500, detail="Error al actualizar la sesión del usuario")
+    
+    
+    def generate_verification_code(self, length=6):
+        return ''.join(secrets.choice('0123456789') for i in range(length))
+
+    def code_password(self, correo: str):
+        try:
+            user = self.db.query(Sso_clienteModule).filter(Sso_clienteModule.cli_correo == correo).first()
+            if not user:
+                raise ValueError("No se encontró ningún usuario con ese correo electrónico")
+
+            verification_code = self.generate_verification_code()
+            current_time = datetime.now(local_timezone)
+            expiration_time = current_time + timedelta(minutes=1)
+            reset_password_entry = self.db.query(ResetpasswordcliModule).filter(ResetpasswordcliModule.resp_correo == correo).first()
+            
+            if reset_password_entry:
+                reset_password_entry.resp_code = verification_code
+                reset_password_entry.resp_expiration = expiration_time
+            else:
+                new_reset_password = ResetpasswordcliModule(
+                    resp_correo=correo,
+                    resp_code=verification_code,
+                    resp_expiration=expiration_time
+                )
+                self.db.add(new_reset_password)
+            
+            self.db.commit()
+                    
+            
+            send_reset_password_email(email=correo, verification_code=verification_code)
+            return expiration_time,correo
+        finally:
+            self.db.close()
+
+
+
+    def valid_code(self, code: str):
+        try:
+            reset_entry = self.db.query(ResetpasswordcliModule).filter(ResetpasswordcliModule.resp_code == code).first()
+            if not reset_entry:
+                raise ValueError("Código de verificación no encontrado")
+            
+            current_time = datetime.utcnow()
+            if reset_entry.resp_expiration > current_time:
+                raise ValueError("El código de verificación ha expirado")
+
+            token_data = {"sub": reset_entry.resp_correo}
+            token = create_token_cli(token_data)
+            return token
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            self.db.close()
+
+    def reset_password_with_token(self, token: str, new_password: str):
+        try:
+            payload = validate_token_cli(token)
+            if not payload:
+                raise ValueError("Token inválido o expirado")
+
+            correo = payload.get("sub")
+            if not correo:
+                raise ValueError("No se pudo obtener el correo del token")
+
+            user = self.db.query(Sso_clienteModule).filter(Sso_clienteModule.cli_correo == correo).first()
+            if not user:
+                raise ValueError("No se encontró ningún usuario con ese correo electrónico")
+
+            user.cli_clave = hash_sha256_then_md5_then_sha1_and_sha512(new_password)
+
+            reset_entry = self.db.query(ResetpasswordcliModule).filter(ResetpasswordcliModule.resp_correo == correo).first()
+            if reset_entry:
+                self.db.delete(reset_entry)
+                self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            self.db.close()
+
+    def delete_code(self, correo:str):
+        try:
+            reset_entry = self.db.query(ResetpasswordcliModule).filter(ResetpasswordcliModule.resp_correo == correo).first()
+            if reset_entry:
+                self.db.delete(reset_entry)
+                self.db.commit()
+        except Exception as e:
+            self.db.rollback()
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            self.db.close()     
