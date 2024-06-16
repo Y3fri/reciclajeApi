@@ -8,6 +8,7 @@ from fastapi.encoders import jsonable_encoder
 from service.sso_usuaio_service import Sso_usuarioService
 from schemas.sso_usuario import Sso_usuario
 from utils.jwt_manager import create_token
+from schemas.correo_cli import CorreoCli,PasswordReset,CodeCli
 from schemas.user_usu import User_usu
 
 
@@ -79,6 +80,55 @@ def deactivate_session(user_id: int):
         db.close()
 
 
+@sso_usuario_router.post('/send-emailUsu', tags=['ResetUsu'])
+def request_password_reset(correo: CorreoCli):
+    db=Session()
+    service = Sso_usuarioService(db)
+    try:
+        expiration,correousu =service.code_password(correo.correo)
+        return {"message": "Código de recuperación de contraseña enviado con éxito", 
+                "expiration": expiration,
+                "correo": correousu}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+@sso_usuario_router.post('/valid-codeUsu', tags=['ResetUsu'])
+def valid_code(code: CodeCli):
+    db=Session()
+    service = Sso_usuarioService(db)
+    try:
+        token = service.valid_code(code.code)
+        return {"message": "Código de verificación válido", "token": token}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()        
+
+@sso_usuario_router.post('/reset-passwordUsu', tags=['ResetUsu'])
+def reset_password(data: PasswordReset):
+    db=Session()
+    service = Sso_usuarioService(db)
+    try:
+        service.reset_password_with_token(data.token, data.new_password)
+        return {"message": "Contraseña restablecida con éxito"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+@sso_usuario_router.delete('/delete-codeUsu', tags=['ResetUsu'])
+def deactivate_session(correo: CorreoCli):  
+    db = Session()  
+    try:
+        service = Sso_usuarioService(db)
+        service.delete_code(correo.correo)
+        return {"message": "No fue posible cambiar la contraseña"}
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    finally:
+        db.close()
 
 
 

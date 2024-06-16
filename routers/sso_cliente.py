@@ -5,6 +5,7 @@ from config.database import Session
 from models.sso_cliente import Sso_cliente
 from fastapi.encoders import jsonable_encoder
 from schemas.user_cli import User_cli
+from schemas.correo_cli import CorreoCli,PasswordReset,CodeCli
 from service.sso_cliente_service import Sso_clienteService
 from schemas.sso_cliente import Sso_cliente
 from utils.jwt_manager_cliente import create_token_cli
@@ -87,8 +88,6 @@ def login(user: User_cli):
                 db.close()
 
 
-
-
 @sso_cliente_router.put('/deactivate-sessionCli/{user_id}', tags=['Auth'])
 def deactivate_session(user_id: int):  
     db = Session()  
@@ -96,6 +95,57 @@ def deactivate_session(user_id: int):
         service = Sso_clienteService(db)
         updated_session = service.deactivate_user_session(user_id)
         return {"message": "Sesión desactivada con éxito", "session": updated_session}
+    except HTTPException as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    finally:
+        db.close()
+
+
+@sso_cliente_router.post('/send-email', tags=['Reset'])
+def request_password_reset(correo: CorreoCli):
+    db=Session()
+    service = Sso_clienteService(db)
+    try:
+        expiration,correocli =service.code_password(correo.correo)
+        return {"message": "Código de recuperación de contraseña enviado con éxito", 
+                "expiration": expiration,
+                "correo": correocli}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+@sso_cliente_router.post('/valid-code', tags=['Reset'])
+def valid_code(code: CodeCli):
+    db=Session()
+    service = Sso_clienteService(db)
+    try:
+        token = service.valid_code(code.code)
+        return {"message": "Código de verificación válido", "token": token}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()        
+
+@sso_cliente_router.post('/reset-password', tags=['Reset'])
+def reset_password(data: PasswordReset):
+    db=Session()
+    service = Sso_clienteService(db)
+    try:
+        service.reset_password_with_token(data.token, data.new_password)
+        return {"message": "Contraseña restablecida con éxito"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+@sso_cliente_router.delete('/delete-code', tags=['Reset'])
+def deactivate_session(correo: CorreoCli):  
+    db = Session()  
+    try:
+        service = Sso_clienteService(db)
+        service.delete_code(correo.correo)
+        return {"message": "No fue posible cambiar la contraseña"}
     except HTTPException as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
     finally:
