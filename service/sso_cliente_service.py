@@ -198,7 +198,7 @@ class Sso_clienteService():
 
             verification_code = self.generate_verification_code()
             current_time = datetime.now(local_timezone)
-            expiration_time = current_time + timedelta(minutes=1)
+            expiration_time = current_time + timedelta(minutes=15)
             reset_password_entry = self.db.query(ResetpasswordcliModule).filter(ResetpasswordcliModule.resp_correo == correo).first()
             
             if reset_password_entry:
