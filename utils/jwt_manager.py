@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from fastapi import HTTPException
 from jose import JWTError, jwt
 
-SECRET_KEY = "tu_secreto"
+SECRET_KEY = "<s^t@>5rPi9(N^qzG=t1M:;N&uP?/f:#j&:QcIMO{)Q3daAXW=E&2+wIsHJs8ly"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480
 

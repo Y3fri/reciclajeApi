@@ -26,7 +26,7 @@ def get_producto() -> List[Producto]:
 
 
 
-@producto_router.get('/productoTodo', tags=['Producto'], response_model=list[Producto],dependencies= [Depends(JWTBearer())])
+@producto_router.get('/productoTodo', tags=['Producto'], response_model=list[Producto],dependencies=[Depends(JWTBearer(allowed_roles=[1]))])
 def get_productoTodo() -> List[Producto]:
         db = Session()
         try:
@@ -52,7 +52,7 @@ async def get_image(product_name: str):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
-@producto_router.post('/producto', tags=['Producto'], response_model=dict,dependencies= [Depends(JWTBearer())])
+@producto_router.post('/producto', tags=['Producto'], response_model=dict,dependencies=[Depends(JWTBearer(allowed_roles=[1]))])
 def create_producto(producto: Producto) -> dict:
     db = Session()
     try:
@@ -63,7 +63,7 @@ def create_producto(producto: Producto) -> dict:
         return JSONResponse(content={"error": f"Error al insertar los datos: {str(e)}"}, status_code=500)
 
 
-@producto_router.put('/producto/{id}', tags=['Producto'], response_model=dict,dependencies= [Depends(JWTBearer())])
+@producto_router.put('/producto/{id}', tags=['Producto'], response_model=dict,dependencies=[Depends(JWTBearer(allowed_roles=[1]))])
 def update_producto(id: int, producto: Producto) -> dict:
         db = Session()
         try:             
