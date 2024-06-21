@@ -58,7 +58,7 @@ class RecogidaService():
 
             new_sso_recogida = Sso_recogidaModule(
                 sreg_idcliente=sso_recogida.sreg_idcliente,
-                sreg_idestado= 1,
+                sreg_idestado= 2,
                 sreg_idrecogida=new_recogida.reg_id,
                 sreg_idtrabajador= result.usu_id,
                 sreg_puntos=sso_recogida.sreg_puntos,

@@ -44,6 +44,29 @@ class Sso_usuarioService():
         ]
         return sso_usuario_list
     
+    def get_sso_usuario_rol(self):      
+        result = self.db.query(Sso_usuarioModule).filter(Sso_usuarioModule.usu_rol==2).all()
+        sso_usuario_list = [
+            {
+                "usu_id": sso_usuario.usu_id,
+                "usu_estado": sso_usuario.usu_estado,
+                "usu_rol": sso_usuario.usu_rol,                
+                "usu_correo": sso_usuario.usu_correo ,
+                "usu_documento": sso_usuario.usu_documento ,
+                "usu_nombres": sso_usuario.usu_nombres ,
+                "usu_apellidos": sso_usuario.usu_apellidos ,
+                "usu_nickname": sso_usuario.usu_nickname ,
+                "usu_clave": sso_usuario.usu_clave ,
+                "usu_latitud": sso_usuario.usu_latitud,
+                "usu_longitud": sso_usuario.usu_longitud,
+                "usu_fechahora": sso_usuario.usu_fechahora,
+                "nombre_estado": sso_usuario.estado.est_nombre,   
+                "nombre_rol": sso_usuario.sso_rol.rol_nombre,             
+            }
+            for sso_usuario in result
+        ]
+        return sso_usuario_list
+    
     def create_sso_usuario(self, sso_usuario: Sso_usuario):
         existing_user = self.db.query(Sso_usuarioModule).filter_by(usu_nickname=sso_usuario.usu_nickname).first()
         existing_user_by_correo = self.db.query(Sso_usuarioModule).filter_by(usu_correo=sso_usuario.usu_correo).first()
@@ -97,29 +120,33 @@ class Sso_usuarioService():
             existing_session = self.db.query(UserSessionModule).filter_by(uses_iduser=user_id).first()
             current_time = datetime.now(local_timezone)
 
-            if existing_session and existing_session.uses_active:
-                raise HTTPException(status_code=400, detail="Ya hay una sesión activa para este usuario.")
-
-            if existing_session:                
-                existing_session.uses_token = token
-                existing_session.uses_expiration_timestamp = current_time + timedelta(minutes=480)
-                existing_session.uses_created_at = current_time
-                existing_session.uses_active = True
-                self.db.commit()
-                self.db.refresh(existing_session)
-                return existing_session
-            else:                
-                new_session = UserSessionModule(
-                    uses_iduser=user_id,
-                    uses_token=token,
-                    uses_expiration_timestamp=current_time + timedelta(minutes=480),
-                    uses_created_at=current_time,
-                    uses_active=True
-                )
-                self.db.add(new_session)
-                self.db.commit()
-                self.db.refresh(new_session)
-                return new_session
+            if existing_session:
+                if existing_session.uses_active:
+                    if current_time > existing_session.uses_expiration_timestamp.astimezone(local_timezone):
+                        self.deactivate_user_session(user_id)
+                    else:
+                        raise HTTPException(status_code=400, detail="Ya hay una sesión activa para este usuario.")
+                else:
+                    if existing_session:                
+                        existing_session.uses_token = token
+                        existing_session.uses_expiration_timestamp = current_time + timedelta(minutes=480)
+                        existing_session.uses_created_at = current_time
+                        existing_session.uses_active = True
+                        self.db.commit()
+                        self.db.refresh(existing_session)
+                        return existing_session
+                    else:                
+                        new_session = UserSessionModule(
+                            uses_iduser=user_id,
+                            uses_token=token,
+                            uses_expiration_timestamp=current_time + timedelta(minutes=480),
+                            uses_created_at=current_time,
+                            uses_active=True
+                        )
+                        self.db.add(new_session)
+                        self.db.commit()
+                        self.db.refresh(new_session)
+                        return new_session
         except HTTPException as http_error:
             raise http_error
         except Exception as e:
