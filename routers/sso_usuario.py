@@ -26,6 +26,17 @@ def get_sso_usuario()-> List [Sso_usuario]:
         finally:
                 db.close()
 
+@sso_usuario_router.get('/sso_usuario_rol',tags=['Usuario'], response_model=list[Sso_usuario],dependencies=[Depends(JWTBearer(allowed_roles=[1]))])
+def get_sso_usuario_rol()-> List [Sso_usuario]:
+        db = Session()
+        try:
+                result = Sso_usuarioService(db).get_sso_usuario_rol()
+                return JSONResponse(content= jsonable_encoder(result))
+        except Exception as e:        
+                return JSONResponse(content={"error": f"Error al obtener los usuarios: {str(e)}"}, status_code=500)
+        finally:
+                db.close()
+
 @sso_usuario_router.post('/sso_usuario',tags=['Usuario'],response_model=dict,dependencies=[Depends(JWTBearer(allowed_roles=[1]))])
 def create_usuario(usuario:Sso_usuario)-> dict:
         db = Session()

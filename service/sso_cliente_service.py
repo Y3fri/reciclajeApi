@@ -141,29 +141,33 @@ class Sso_clienteService():
             existing_session = self.db.query(UserCliSessionModule).filter_by(ses_idcliente=user_id).first()
             current_time = datetime.now(local_timezone)
 
-            if existing_session and existing_session.ses_active:
-                raise HTTPException(status_code=400, detail="Ya hay una sesión activa para este usuario.")
-
-            if existing_session:                
-                existing_session.ses_token = token
-                existing_session.ses_expiration_timestamp = current_time + timedelta(minutes=480)
-                existing_session.ses_created_at = current_time
-                existing_session.ses_active = True
-                self.db.commit()
-                self.db.refresh(existing_session)
-                return existing_session
-            else:                
-                new_session = UserCliSessionModule(
-                    ses_idcliente=user_id,
-                    ses_token=token,
-                    ses_expiration_timestamp=current_time + timedelta(minutes=480),
-                    ses_created_at=current_time,
-                    ses_active=True
-                )
-                self.db.add(new_session)
-                self.db.commit()
-                self.db.refresh(new_session)
-                return new_session
+            if existing_session:
+                if existing_session.ses_active:
+                    if current_time > existing_session.ses_expiration_timestamp.astimezone(local_timezone):
+                        self.deactivate_user_session(user_id)
+                    else:
+                        raise HTTPException(status_code=400, detail="Ya hay una sesión activa para este usuario.")
+                else:
+                    if existing_session:                
+                        existing_session.ses_token = token
+                        existing_session.ses_expiration_timestamp = current_time + timedelta(minutes=480)
+                        existing_session.ses_created_at = current_time
+                        existing_session.ses_active = True
+                        self.db.commit()
+                        self.db.refresh(existing_session)
+                        return existing_session
+                    else:                
+                        new_session = UserCliSessionModule(
+                            ses_idcliente=user_id,
+                            ses_token=token,
+                            ses_expiration_timestamp=current_time + timedelta(minutes=480),
+                            ses_created_at=current_time,
+                            ses_active=True
+                        )
+                        self.db.add(new_session)
+                        self.db.commit()
+                        self.db.refresh(new_session)
+                        return new_session
         except HTTPException as http_error:
             raise http_error
         except Exception as e:
