@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from typing import List
 from config.database import Session
@@ -32,7 +32,9 @@ def create_recogida(recogida:Recogida, sso_recogida: Sso_Recogida)-> dict:
                 RecogidaService(db).create_recogida(recogida,sso_recogida)               
                 return JSONResponse(content={"message":"Se han insertado los datos correctamente"}, status_code=200)
         except Exception as e:
-                return JSONResponse(content={"error": f"Error al insertar los datos: {str(e)}"}, status_code=500)
+                raise HTTPException(status_code=500, detail=str(e))
+        finally:
+                db.close()
 
 
 @recogida_router.put('/recogida/{id}', tags=['Recogida'], response_model=dict)
