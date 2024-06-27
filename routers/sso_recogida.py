@@ -9,6 +9,17 @@ from schemas.sso_recogida import Sso_Recogida
 sso_recogida_router = APIRouter()
 
 
+@sso_recogida_router.get('/sso_recogida_id_cliente/{id}', tags=['Sso_recogidas'], response_model=List[Sso_Recogida])
+def get_sso_recogida_id_cliente(id: int) -> List[Sso_Recogida]:
+    db = Session()
+    try:
+        result = Sso_recogidaService(db).get_sso_recogida_id_cliente(id)
+        return JSONResponse(content=jsonable_encoder(result))
+    except Exception as e:        
+        return JSONResponse(content={"error": f"Error al obtener los datos de la recogida: {str(e)}"}, status_code=500)
+    finally:
+        db.close()
+
 @sso_recogida_router.get('/sso_recogida_id/{id}', tags=['Sso_recogidas'], response_model=List[Sso_Recogida])
 def get_sso_recogida_id(id: int) -> List[Sso_Recogida]:
     db = Session()
